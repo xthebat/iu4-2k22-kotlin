@@ -13,6 +13,13 @@ repositories {
 }
 
 dependencies {
+    api("com.fasterxml.jackson.core:jackson-core:2.13.4")
+    api("com.fasterxml.jackson.core:jackson-annotations:2.13.4")
+    api("com.fasterxml.jackson.core:jackson-databind:2.13.4")
+    api("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
+
+    api("com.konghq:unirest-java:3.11.12")
+
     testImplementation(kotlin("test"))
 }
 
