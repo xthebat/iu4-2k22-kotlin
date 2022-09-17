@@ -1,6 +1,4 @@
-import sem01.div
-import sem01.for_each
-import sem01.sum
+package sem01
 
 fun main(args: Array<String>) {
     println("Hello World!")
