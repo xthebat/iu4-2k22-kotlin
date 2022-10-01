@@ -131,9 +131,4 @@ fun main(args: Array<String>) {
 //    nullability +
 //    type conversion +
 
-
-//    sem04:
-//    collections: Array, List, ArrayList, Set, MutableSet, Map, MutableMap
-//    simple classes, object, enum
-//    get restapi + json
 }
