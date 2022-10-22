@@ -13,6 +13,9 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation(kotlin("reflect"))
+
     api("com.fasterxml.jackson.core:jackson-core:2.13.4")
     api("com.fasterxml.jackson.core:jackson-annotations:2.13.4")
     api("com.fasterxml.jackson.core:jackson-databind:2.13.4")
