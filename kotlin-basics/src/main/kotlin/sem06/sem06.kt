@@ -5,13 +5,12 @@ package sem06
 import sem05.readInt16
 import sem05.readInt32
 import sem05.readInt8
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.EOFException
-import java.io.InputStream
+import java.io.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
+import kotlin.system.measureTimeMillis
 
 inline val ByteArray.string get() = toString(Charsets.ISO_8859_1)
 inline val String.bytes get() = toByteArray(Charsets.ISO_8859_1)
@@ -62,7 +61,9 @@ inline fun InputStream.readString() = readWhile { it != 0 }.string
 
 data class CpuContext(val eax: Int, val ecx: Int, val ebx: Int, val edx: Int)
 
-data class Student(val name: String, val age: Int)
+data class Student(val name: String, val age: Int) : Closeable {
+    override fun close() = println("'$name' -> closed")
+}
 
 
 /*
@@ -74,6 +75,10 @@ class Serializable(Protocol):
 fun interface Reader<T> {
     fun read(stream: InputStream): T
 }
+
+
+@Suppress("UNCHECKED_CAST")
+fun <R> Any?.cast() = this as R
 
 
 class Deserializer {
@@ -93,14 +98,30 @@ class Deserializer {
 
     private val readers = mutableMapOf<KType, Reader<*>>()
 
-    fun <T: Any> deserialize(kClass: KClass<T>, stream: InputStream): T {
+    fun <T: Any> deserialize(kClass: KClass<T>, stream: InputStream): T =
+        deserialize(kClass.starProjectedType, stream).cast()
+
+    fun deserialize(type: KType, stream: InputStream): Any? =
+        readers.getOrPut(type) { defaultReader(type) }.read(stream)
+
+    /*
+    def defaultReader(kClass: KClass<T>, stream: InputStream):
+        class KClassReader(Reader):
+            def read(stream: InputStream) -> T:
+                ...
+
+        return Reader()
+     */
+    private fun defaultReader(type: KType) = Reader { stream ->
+        val kClass = type.classifier as KClass<*>
+
         val constructor = kClass.constructors.single()
 
-//      args = {it: it.deserialize(stream) for it in constructor.parameters}
-        val args = constructor.parameters.associateWith { requireNotNull(readers[it.type]).read(stream) }
+        // args = {it: it.deserialize(stream) for it in constructor.parameters}
+        val args = constructor.parameters.associateWith { deserialize(it.type, stream) }
 
-//      return constructor(**args)
-        return constructor.callBy(args)
+        // return constructor(**args)
+        constructor.callBy(args)
     }
 
     fun <T: Any> register(type: KType, reader: Reader<T>) {
@@ -123,16 +144,35 @@ inline fun <T: Any> KClass<T>.deserialize(
 ) = deserialize(ByteArrayInputStream(bytes), deserializer)
 
 
-class SomethingWeird(val field0: Int, val default: Boolean = false)
+data class OuterWeirdClass(val field3040: Int, val somethingWeird: SomethingWeird)
+
+data class SomethingWeird(val field9988: Int, val default: Boolean = false)
 
 
 fun main(args: Array<String>) {
     println("hello world")
 
-    Deserializer.default.register { SomethingWeird(it.readInt32()) }
+    Deserializer.default.register {
+        SomethingWeird(it.readInt32())
+    }
 
-    val somethingWeird = SomethingWeird::class.deserialize("00003040".unhexlify())
+    val somethingWeird = SomethingWeird::class.deserialize("00009988".unhexlify())
     println(somethingWeird)
+
+    measureTimeMillis {
+        repeat(1000) {
+            val outerWeirdClass = OuterWeirdClass::class.deserialize("0000304000009988".unhexlify())
+//            println(outerWeirdClass)
+        }
+    }
+
+    val time = measureTimeMillis {
+        repeat(10000) {
+            val outerWeirdClass = OuterWeirdClass::class.deserialize("0000304000009988".unhexlify())
+//            println(outerWeirdClass)
+        }
+    }
+    println("time elapsed = $time")
 
     val serializedStudent = "4E/|_C_7OPbI".bytes + "0000000012".unhexlify()
     val student = Student::class.deserialize(serializedStudent)

@@ -115,6 +115,15 @@ types: dict[str, Serializable] = {
 
 
 def main(args):
+    string = "abcdefght"
+
+    list_of_tuples = [
+        (1, 2),
+        (3, 4)
+    ]
+
+    slices = list(map(lambda start, end: string[start:end], list_of_tuples))
+
     data = bytes.fromhex(args[1])
     stream = DataInputStream(data)
 
